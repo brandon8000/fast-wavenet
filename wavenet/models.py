@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 from layers import (_causal_linear, _output_linear, conv1d,
                     dilated_conv1d)
+from utils import mu_law_bins
 
 
 class Model(object):
@@ -88,7 +89,8 @@ class Model(object):
 class Generator(object):
     def __init__(self, model, batch_size=1, input_size=1):
         self.model = model
-        self.bins = np.linspace(-1, 1, self.model.num_classes)
+        # self.bins = np.linspace(-1, 1, self.model.num_classes)
+        _, self.bins = mu_law_bins(self.num_classes)
 
         inputs = tf.placeholder(tf.float32, [batch_size, input_size],
                                 name='inputs')
