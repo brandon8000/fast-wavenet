@@ -186,13 +186,16 @@ class Generator(object):
             feed_dict = {self.inputs: input}
             
             # draw the max
-            output_dist = self.model.sess.run(self.out_ops, feed_dict=feed_dict)[0] # ignore push ops
-            value = np.argmax(output_dist[0, :])
-            input = np.array(self.bins[value])[None, None]
+            # output_dist = self.model.sess.run(self.out_ops, feed_dict=feed_dict)[0] # ignore push ops
+            # value = np.argmax(output_dist[0, :])
+            # input = np.array(self.bins[value])[None, None]
             
             # draw from the distribution
-            # output_dist = self.model.sess.run(self.out_ops, feed_dict=feed_dict)[0] # ignore push ops
-            # input = np.random.choice(self.bins, self.batch_size, list(output_dist))[None]
+            output_dist = self.model.sess.run(self.out_ops, feed_dict=feed_dict)[0][0, :] # ignore push ops
+            #print('output distribution:{}'.format(output_dist))
+            #plt.plot(output_dist)
+            #plt.show()
+            input = np.random.choice(self.bins, self.batch_size, p=list(output_dist)/sum(list(output_dist)))[None]
                         
             predictions.append(input)
             if step % 1000 == 0:

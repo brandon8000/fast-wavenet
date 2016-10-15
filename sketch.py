@@ -81,9 +81,11 @@ for t in range(10000):
 
 # start generating
 tic = time()
-predictions = generator.run(inputs[:, t+1:t+2, 0], 32000)
+predictions = generator.run(inputs[:, t+1:t+2, 0], 16000)
 toc = time()
 print('Generating took {} seconds.'.format(toc-tic))
+
+# output_dist = generator.model.sess.run(generator.out_ops, feed_dict={generator.inputs: inputs[:, t+1:t+2, 0]})[0][0, :]
 
 
 # In[ ]:
@@ -93,10 +95,8 @@ Audio(predictions, rate=44100)
 
 # In[ ]:
 
-inputs, targets = make_batch('assets/voice.wav')
-import matplotlib.pyplot as plt
-plt.plot(targets[0, :])
-plt.show()
+inputs = np.random.choice(generator.bins, 1, p=list(output_dist)/sum(list(output_dist)))[None]
+print(inputs)
 
 
 # In[ ]:
