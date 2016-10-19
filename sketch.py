@@ -7,19 +7,25 @@ from time import time
 
 import tensorflow as tf
 
-from wavenet.utils import make_batch, mu_law_bins
+from wavenet.utils import make_batch, make_batch_padded, mu_law_bins
 from wavenet.models import Model, Generator
 
 from IPython.display import Audio
 
 import numpy as np
 
-inputs, targets = make_batch('assets/voice.wav')
-num_time_samples = inputs.shape[1]
+
 num_channels = 1
 gpu_fraction = 1.0
+num_layers = 14
 
-model = Model(num_time_samples=num_time_samples,
+inputs, targets = make_batch_padded('assets/voice.wav', num_layers = num_layers)
+num_input_samples = inputs.shape[1]
+num_output_samples = targets.shape[1]
+
+model = Model(num_input_samples=num_input_samples,
+              num_output_samples=num_output_samples,
+              num_layers = num_layers,
               num_channels=num_channels,
               gpu_fraction=gpu_fraction)
 
@@ -76,12 +82,13 @@ model.saver.restore(model.sess, "/tmp/model.ckpt")
 generator = Generator(model)
 
 # flush the states
+pad_len = 2 ** num_layers - 1
 for t in range(10000):
-    check_test = generator.model.sess.run([generator.out_ops], feed_dict={generator.inputs:inputs[:, t:t+1, 0]})
+    check_test = generator.model.sess.run([generator.out_ops], feed_dict={generator.inputs:inputs[:, t+pad_len:t+pad_len+1, 0]})
 
 # start generating
 tic = time()
-predictions = generator.run(inputs[:, t+1:t+2, 0], 16000)
+predictions = generator.run(inputs[:, t+pad_len+1:t+pad_len+2, 0], 16000)
 toc = time()
 print('Generating took {} seconds.'.format(toc-tic))
 
@@ -101,5 +108,5 @@ print(inputs)
 
 # In[ ]:
 
-print(generator.bins[2][None, None])
+print(num_output_samples)
 
