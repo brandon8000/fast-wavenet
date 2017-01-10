@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from layers import _causal_linear, _output_linear, conv1d, dilated_conv1d, dilated_conv1d_nopad, post_processing, dilated_generation, post_processing_generation
-from utils import mu_law_bins
+from wavenet.layers import _causal_linear, _output_linear, conv1d, dilated_conv1d, dilated_conv1d_nopad, post_processing, dilated_generation, post_processing_generation
+from wavenet.utils import mu_law_bins
 
 class Model(object):
 
@@ -43,25 +43,25 @@ class Model(object):
                 rate = 2 ** i
                 name = 'b{}-l{}'.format(b, i)
                 h, skip, test = dilated_conv1d_nopad(h, num_gated, num_hidden, num_skip, num_output_samples, rate=rate, name=name)
-                tf.histogram_summary(name + 'h', h)
+                tf.summary.histogram(name + 'h', h)
                 hs.append(h)
                 skips.append(skip)
                 tests.append(test)
 
         outputs = post_processing(skips, num_post_layers, num_classes)
-        tf.histogram_summary('outputs', outputs)
+        tf.summary.histogram('outputs', outputs)
         
         costs = tf.nn.sparse_softmax_cross_entropy_with_logits(outputs, targets)
         cost = tf.reduce_mean(costs)
-        tf.scalar_summary('cost', cost)
+        tf.summary.scalar('cost', cost)
         
         train_step = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost)
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction)
         sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         
-        merged = tf.merge_all_summaries()
-        train_writer = tf.train.SummaryWriter('logs/train', sess.graph)
+        merged = tf.summary.merge_all()
+        train_writer = tf.summary.FileWriter('logs/train', sess.graph)
         
         self.inputs = inputs
         self.targets = targets
@@ -105,7 +105,7 @@ class Generator(object):
         self.model = model
         _, self.bins = mu_law_bins(self.model.num_classes)
         inputs = tf.placeholder(tf.float32, [batch_size, input_size], name='inputs')
-        print 'Make Generator.'
+        print ('Make Generator.\n')
         count = 0
         h = inputs
         init_ops = []
